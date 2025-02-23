@@ -1,7 +1,7 @@
 # FHIR7
 Checking my FHIR website using RESTful API
 
-In order to run the fhir website using REStful API in your own computer, you must download some features that create environment for launching our own website. 
+In order to run the fhir website using REStful API in your own computer, you must download some features that create environment for launching our own website. \n
 **First step**: Download Node.js 
 https://nodejs.org/en/download
 **Second step**: Go to Extensions in VS code, download Live Server and REST client
