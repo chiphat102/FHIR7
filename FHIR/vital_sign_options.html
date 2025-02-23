@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vital Sign Selection</title>
+    <script src="Cookie.js"></script>
+    <script src="dateTime.js"></script> 
+</head>
+<body>
+    <h2>Vital Sign Options</h2>
+    <p id="display"></p>
+    <div id="radioButtonsContainer"></div>
+    
+    <!-- 數值輸入框和提交按鈕 -->
+    <div id="inputContainer" style="display: none;">
+        <label id="inputLabel" for="inputValue">Enter Value:</label>
+        <input type="text" id="inputValue" placeholder="Enter measurement value">
+        <button onclick="updateObservation()">Submit</button>
+    </div>
+
+    <h2>Observation JSON:</h2>
+    <div id="result"></div>
+
+    <script>
+        const radioButtonsContainer = document.getElementById("radioButtonsContainer");
+        const inputContainer = document.getElementById("inputContainer");
+        const inputLabel = document.getElementById("inputLabel");
+        const inputValue = document.getElementById("inputValue");
+        const resultDiv = document.getElementById("result");
+        const PHR_ID = sessionStorage.getItem("PHR_ID") || "Unknown";
+        const Name = sessionStorage.getItem("Name") || "Unknown";
+
+        document.getElementById('display').innerHTML = `PHR_ID: ${PHR_ID}, Name: ${Name}`;
+
+        let selectedItem = {};
+
+        // ✅ 解析 CSV 的函數
+        function parseCSV(csvData) {
+            const lines = csvData.trim().split("\n");
+            const headers = lines[0].split(",").map(header => header.trim());
+            return lines.slice(1).map(line => {
+                const values = line.split(",").map(value => value.trim());
+                return headers.reduce((obj, header, index) => {
+                    obj[header] = values[index] || "";
+                    return obj;
+                }, {});
+            });
+        }
+
+        // ✅ 處理選擇 radio 按鈕的函數
+        function displaySelection(event) {
+            selectedItem.LOINC = event.target.getAttribute("data-loinc");
+            selectedItem.display = event.target.getAttribute("data-display");
+            selectedItem.unitCode = event.target.getAttribute("data-unitCode");
+            selectedItem.unit = event.target.getAttribute("data-unit");
+
+            setCookie("selectedLOINC", selectedItem.LOINC, 1);
+            setCookie("selectedDisplay", selectedItem.display, 1);
+            setCookie("selectedUnitCode", selectedItem.unitCode, 1);
+            setCookie("selectedUnit", selectedItem.unit, 1);
+
+            // 顯示輸入框
+            inputLabel.textContent = `Enter ${selectedItem.display} (Code: ${selectedItem.LOINC}, UnitCode: ${selectedItem.unitCode}, Unit: ${selectedItem.unit}):`;
+            inputContainer.style.display = "block";
+        }
+
+        // ✅ 生成 radio 按鈕
+        async function loadCSV() {
+            try {
+                const response = await fetch('./vitalSignItems.csv');
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+                const csvData = await response.text();
+                const data = parseCSV(csvData);
+
+                if (data.length === 0) {
+                    radioButtonsContainer.innerHTML = `<p style="color: red;">CSV file is empty or invalid.</p>`;
+                    return;
+                }
+
+                data.forEach(item => {
+                    if (item.Code) {
+                        const radioButton = document.createElement("input");
+                        radioButton.type = "radio";
+                        radioButton.name = "measurement";
+                        radioButton.value = item.Display;
+                        radioButton.setAttribute("data-loinc", item.Code);
+                        radioButton.setAttribute("data-display", item.Display);
+                        radioButton.setAttribute("data-unitCode", item.UnitCode);
+                        radioButton.setAttribute("data-unit", item.Unit);
+                        radioButton.addEventListener("change", displaySelection);
+
+                        const label = document.createElement("label");
+                        label.textContent = `${item.Display} (${item.UnitCode}, ${item.Unit})`;
+                        label.htmlFor = item.Code;
+
+                        radioButtonsContainer.appendChild(radioButton);
+                        radioButtonsContainer.appendChild(label);
+                        radioButtonsContainer.appendChild(document.createElement("br"));
+                    }
+                });
+            } catch (error) {
+                console.error("❌ Error loading CSV file:", error);
+                radioButtonsContainer.innerHTML = `<p style="color: red;">Failed to load CSV file.</p>`;
+            }
+        }
+
+        // ✅ 提交並顯示 Observation JSON
+        function updateObservation() {
+            const enteredValue = inputValue.value.trim();
+            if (!enteredValue) {
+                alert("Please enter a value before submitting.");
+                return;
+            }
+
+            const observationJSON = {
+                "resourceType": "Observation",
+                "id": "ExampleVitalSign",
+                "status": "final",
+                "category": [{
+                    "coding": [{
+                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                        "code": "vital-signs",
+                        "display": "Vital Signs"
+                    }]
+                }],
+                "code": {
+                    "coding": [{
+                        "system": "http://loinc.org",
+                        "code": selectedItem.LOINC,
+                        "display": selectedItem.display
+                    }]
+                },
+                "subject": {
+                    "reference": `Patient/${PHR_ID}`
+                },
+                "effectiveDateTime": getFormattedTime(),
+                "valueQuantity": {
+                    "value": parseFloat(enteredValue),
+                    "unit": selectedItem.unit,
+                    "system": "http://unitsofmeasure.org",
+                    "code": selectedItem.unitCode
+                }
+            };
+
+            // 顯示 JSON 結果
+            resultDiv.innerHTML = `<pre>${JSON.stringify(observationJSON, null, 2)}</pre>`;
+        }
+
+        // ✅ 頁面載入後執行
+        document.addEventListener("DOMContentLoaded", loadCSV);
+    </script>
+</body>
+</html>
