@@ -1,10 +1,13 @@
 # FHIR7
 Checking my FHIR website using RESTful API
 
-In order to run the fhir website using REStful API in your own computer, you must download some features that create environment for launching our own website. \n
+In order to run the fhir website using REStful API in your own computer, you must download some features that create environment for launching our own website.
+
 **First step**: Download Node.js 
 https://nodejs.org/en/download
+
 **Second step**: Go to Extensions in VS code, download Live Server and REST client
+
 **Third step**: Open Powershell by Window + X, then input this line: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 Next, check the ExecutionPolicy list by this line: Get-ExecutionPolicy -List
 You should see RemoteSigned under the CurrentUser scope. It means we have succeeded.
@@ -13,9 +16,12 @@ Then reopen VS code, open the terminal and then input: node server.js
 This time right click on createAnonymousPatient.html, you shall see "Open with Live server" option, choose it and then have fun
 
 為了在您的電腦上運行 FHIR 網站並使用 RESTful API，您需要下載一些功能來創建運行我們自己網站的環境。 
+
 **第一步**：下載 Node.js
 https://nodejs.org/en/download
+
 **第二步**：在 VS Code 的擴展中下載 Live Server 和 REST Client
+
 **第三步**：按 Windows + X 打開 Powershell，然後輸入以下命令：
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 接著，使用以下命令檢查執行策略列表：
