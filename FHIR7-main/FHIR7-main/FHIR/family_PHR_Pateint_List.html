@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Table Display from URL</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        tr:hover {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        #display {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+    <script src="Cookie.js"></script> <!-- 確保 Cookie.js 已正確載入 -->
+</head>
+<body>
+
+<h2>CSV Data Display</h2>
+
+<div id="table-container"></div>
+<div id="display">Click on a row to see details here.</div>
+
+<script>
+const csvUrl = 'patients.csv';
+
+// 解析 CSV 資料
+function parseCSV(data) {
+    if (!data.trim()) {
+        console.error("CSV file is empty.");
+        return [];
+    }
+
+    const rows = data.trim().split(/\r?\n/);
+    const headers = rows[0].split(',').map(h => h.trim());
+
+    return rows.slice(1).map(row => {
+        const values = row.split(',').map(v => v ? v.trim() : '');
+        let record = {};
+        headers.forEach((header, index) => {
+            record[header] = values[index] || '';
+        });
+        return record;
+    });
+}
+
+// 顯示表格並加入點擊事件
+function displayTable(records) {
+    if (!records.length) {
+        document.getElementById('table-container').innerHTML = "<p>No data available.</p>";
+        return;
+    }
+
+    const tableContainer = document.getElementById('table-container');
+    tableContainer.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+
+    const headerRow = document.createElement('tr');
+    Object.keys(records[0]).forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    records.forEach(record => {
+        const row = document.createElement('tr');
+        Object.values(record).forEach(value => {
+            const td = document.createElement('td');
+            td.textContent = value;
+            row.appendChild(td);
+        });
+
+        row.addEventListener('click', () => {
+            // ✅ Correctly assign patient data
+            const PHR_ID = record.PHR_ID; 
+            const Name = record.Name; 
+
+            // ✅ Display patient info before redirecting
+            document.getElementById('display').textContent = `PHR_ID: ${PHR_ID}, Name: ${Name}`;
+
+            // ✅ Store in sessionStorage
+            sessionStorage.setItem("PHR_ID", PHR_ID);
+            sessionStorage.setItem("Name", Name);
+
+            // ✅ Redirect to vital_sign_options.html
+            window.location.href = 'vital_sign_options.html';
+        });
+
+
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+}
+
+// 讀取 CSV 並顯示
+fetch(csvUrl)
+    .then(response => response.text())
+    .then(data => {
+        const records = parseCSV(data);
+        displayTable(records);
+    })
+    .catch(error => {
+        console.error('Error fetching CSV:', error);
+        document.getElementById('table-container').innerHTML = "<p>Failed to load data.</p>";
+    });
+</script>
+
+</body>
+</html>
