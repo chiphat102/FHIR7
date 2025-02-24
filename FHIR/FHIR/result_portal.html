@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Result Portal</title>
+  <!-- Optional scripts for cookie handling and time formatting -->
+  <script src="Cookie.js"></script>
+  <script src="dateTime.js"></script>
+  <style>
+    /* Simple Excel-like table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-family: Arial, sans-serif;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h2>FHIR Bundle Result</h2>
+  <!-- Display the complete JSON Bundle -->
+  <div id="bundleDisplay"></div>
+  <h2>Patient Vital Sign Details (Excel Style)</h2>
+  <!-- Container for the Excel-style table -->
+  <div id="excelTableContainer"></div>
+
+  <script>
+    // Retrieve patient info (PHR_ID and Name) from sessionStorage
+    const PHR_ID = sessionStorage.getItem("PHR_ID") || "Unknown";
+    const Name = sessionStorage.getItem("Name") || "Unknown";
+
+    // Retrieve the stored Observation JSON (vital sign data) from sessionStorage
+    const observationJSON = sessionStorage.getItem("vitalObservation");
+    let observation = null;
+    if (observationJSON) {
+      observation = JSON.parse(observationJSON);
+    }
+
+    // Create a Patient resource using FHIR standards
+    const patientResource = {
+      "resourceType": "Patient",
+      "id": PHR_ID,
+      "name": [{
+        "use": "official",
+        "text": Name
+      }]
+    };
+
+    // Build a FHIR Bundle that includes the Patient resource
+    const bundle = {
+      "resourceType": "Bundle",
+      "type": "collection",
+      "entry": [
+        { "resource": patientResource }
+      ]
+    };
+
+    // If an Observation resource exists, add it to the Bundle
+    if (observation) {
+      bundle.entry.push({ "resource": observation });
+    }
+
+    // Display the complete JSON Bundle
+    document.getElementById("bundleDisplay").innerHTML = `<pre>${JSON.stringify(bundle, null, 2)}</pre>`;
+
+    // Create an Excel-style table to display the patient vital sign details
+    let tableHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>PHR_ID</th>
+            <th>Name</th>
+            <th>LOINC Code</th>
+            <th>Display</th>
+            <th>Measurement Value</th>
+            <th>Unit</th>
+            <th>Effective DateTime</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${PHR_ID}</td>
+            <td>${Name}</td>
+            <td>${observation ? observation.code.coding[0].code : 'N/A'}</td>
+            <td>${observation ? observation.code.coding[0].display : 'N/A'}</td>
+            <td>${observation ? observation.valueQuantity.value : 'N/A'}</td>
+            <td>${observation ? observation.valueQuantity.unit : 'N/A'}</td>
+            <td>${observation ? observation.effectiveDateTime : 'N/A'}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    // Insert the table into the container
+    document.getElementById("excelTableContainer").innerHTML = tableHTML;
+  </script>
+</body>
+</html>
